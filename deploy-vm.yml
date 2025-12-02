@@ -10,15 +10,7 @@
     admin_username: "azureuser"
     
   tasks:
-    - name: Create public IP address
-      azure.azcollection.azure_rm_publicipaddress:
-        resource_group: "{{ resource_group_name }}"
-        allocation_method: Static
-        name: "{{ vm_name }}-pip"
-      register: pip_output
-    
-    - name: Create Network Security Group with SSH blocked 
-      # Later to be unblocked for explicit source address(es)
+    - name: Create Network Security Group with SSH blocked
       azure.azcollection.azure_rm_securitygroup:
         resource_group: "{{ resource_group_name }}"
         name: "{{ vm_name }}-nsg"
@@ -32,14 +24,13 @@
             source_address_prefix: '*'
             destination_address_prefix: '*'
       register: nsg_output
-
+    
     - name: Create virtual network interface card
       azure.azcollection.azure_rm_networkinterface:
         resource_group: "{{ resource_group_name }}"
         name: "{{ vm_name }}-nic"
         virtual_network: demo-vnet
         subnet: demo-subnet
-        public_ip_name: "{{ vm_name }}-pip"
         security_group: "{{ vm_name }}-nsg"
       register: nic_output
     
@@ -66,5 +57,8 @@
     
     - name: Display VM info
       debug:
-        msg: "VM {{ vm_output.ansible_facts.azure_vm.name }} deployed successfully"
+        msg: 
+          - "VM {{ vm_output.ansible_facts.azure_vm.name }} deployed successfully"
+          - "VM has private IP only (no public IP due to subscription limits)"
+          - "Network: {{ nic_output.state.ip_configuration.subnet.name }}"
 
