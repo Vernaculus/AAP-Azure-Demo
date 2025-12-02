@@ -1,0 +1,46 @@
+---
+- name: Provision Azure Infrastructure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    resource_group_name: "ansible-demo-rg"
+    location: "eastus"
+    vnet_name: "demo-vnet"
+    subnet_name: "demo-subnet"
+  
+  tasks:
+    - name: Create resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group_name }}"
+        location: "{{ location }}"
+        tags:
+          environment: demo
+          managed_by: ansible
+      register: rg_output
+    
+    - name: Create virtual network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vnet_name }}"
+        address_prefixes: "10.0.0.0/16"
+        tags:
+          environment: demo
+      register: vnet_output
+    
+    - name: Create subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ subnet_name }}"
+        address_prefix: "10.0.1.0/24"
+        virtual_network: "{{ vnet_name }}"
+      register: subnet_output
+    
+    - name: Display infrastructure details
+      debug:
+        msg: 
+          - "Resource Group: {{ rg_output.state.name }}"
+          - "VNet: {{ vnet_output.state.name }}"
+          - "Subnet: {{ subnet_output.state.name }}"
+

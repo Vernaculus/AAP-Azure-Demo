@@ -1,0 +1,70 @@
+---
+- name: Deploy Azure Virtual Machine
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    resource_group_name: "ansible-demo-rg"
+    vm_name: "demo-vm"
+    admin_username: "azureuser"
+    
+  tasks:
+    - name: Create public IP address
+      azure.azcollection.azure_rm_publicipaddress:
+        resource_group: "{{ resource_group_name }}"
+        allocation_method: Static
+        name: "{{ vm_name }}-pip"
+      register: pip_output
+    
+    - name: Create Network Security Group with SSH blocked 
+      # Later to be unblocked for explicit source address(es)
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vm_name }}-nsg"
+        rules:
+          - name: DenySSH
+            protocol: Tcp
+            destination_port_range: 22
+            access: Deny
+            priority: 1001
+            direction: Inbound
+            source_address_prefix: '*'
+            destination_address_prefix: '*'
+      register: nsg_output
+
+    - name: Create virtual network interface card
+      azure.azcollection.azure_rm_networkinterface:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vm_name }}-nic"
+        virtual_network: demo-vnet
+        subnet: demo-subnet
+        public_ip_name: "{{ vm_name }}-pip"
+        security_group: "{{ vm_name }}-nsg"
+      register: nic_output
+    
+    - name: Create VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vm_name }}"
+        vm_size: Standard_B1s
+        admin_username: "{{ admin_username }}"
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: /home/{{ admin_username }}/.ssh/authorized_keys
+            key_data: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDdummy-key-replace-with-real"
+        network_interfaces: "{{ vm_name }}-nic"
+        image:
+          offer: RHEL
+          publisher: RedHat
+          sku: '9_4'
+          version: latest
+        tags:
+          environment: demo
+          deployed_by: ansible
+      register: vm_output
+    
+    - name: Display VM info
+      debug:
+        msg: "VM {{ vm_output.ansible_facts.azure_vm.name }} deployed successfully"
+

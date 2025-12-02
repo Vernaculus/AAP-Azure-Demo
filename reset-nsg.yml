@@ -1,0 +1,30 @@
+---
+- name: Reset NSG to Deny All SSH Access
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    resource_group_name: "ansible-demo-rg"
+    vm_name: "demo-vm"
+  
+  tasks:
+    - name: Update NSG to deny all SSH access
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vm_name }}-nsg"
+        rules:
+          - name: DenySSH
+            protocol: Tcp
+            destination_port_range: 22
+            access: Deny
+            priority: 1001
+            direction: Inbound
+            source_address_prefix: '*'
+            destination_address_prefix: '*'
+      register: nsg_reset
+    
+    - name: Confirm NSG reset
+      debug:
+        msg: "NSG reset - SSH access denied from all sources"
+

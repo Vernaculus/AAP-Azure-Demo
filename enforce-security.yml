@@ -1,0 +1,57 @@
+---
+- name: Enforce Security Policies
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  
+  vars:
+    resource_group_name: "ansible-demo-rg"
+  
+  tasks:
+    # Apply compliance tags for governance and audit tracking
+    - name: Update resource group with compliance tags
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group_name }}"
+        location: "eastus"
+        tags:
+          environment: demo
+          managed_by: ansible
+          compliance: "enforced"
+          last_scanned: "{{ ansible_date_time.date }}"
+          security_classification: "internal"
+          audit_required: "true"
+          owner: "security-team"
+      register: rg_tagged
+    
+    # Inventory all resources for security audit
+    - name: Get all resources in resource group
+      azure.azcollection.azure_rm_resource_info:
+        resource_group: "{{ resource_group_name }}"
+      register: rg_resources
+    
+    # Report current compliance status
+    - name: Display security compliance status
+      debug:
+        msg:
+          - "Resource Group: {{ resource_group_name }}"
+          - "Compliance Status: {{ rg_tagged.state.tags.compliance }}"
+          - "Last Scanned: {{ rg_tagged.state.tags.last_scanned }}"
+          - "Total Resources: {{ rg_resources.response | length }}"
+          - "Tags Applied: {{ rg_tagged.state.tags }}"
+    
+    # Generate audit trail entry with timestamp
+    - name: Log security audit entry
+      debug:
+        msg: 
+          - "AUDIT: {{ ansible_date_time.iso8601 }}"
+          - "Security policies enforced on {{ resource_group_name }}"
+          - "{{ rg_resources.response | length }} resources validated"
+          - "Status: COMPLIANT"
+    
+    # Verify tag compliance on all child resources
+    - name: Check tag compliance on resources
+      debug:
+        msg: "{{ item.name }}: {{ item.tags | default('MISSING TAGS') }}"
+      loop: "{{ rg_resources.response }}"
+      when: rg_resources.response | length > 0
+

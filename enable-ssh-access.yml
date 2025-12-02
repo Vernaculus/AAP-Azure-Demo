@@ -1,0 +1,39 @@
+---
+- name: Enable SSH Access from Current IP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    resource_group_name: "ansible-demo-rg"
+    vm_name: "demo-vm"
+  
+  tasks:
+    - name: Get my public IP with curl
+      shell: curl -s ifconfig.me
+      register: my_ip_raw
+      changed_when: false
+    
+    - name: Display detected IP
+      debug:
+        msg: "Detected public IP: {{ my_ip_raw.stdout | trim }}"
+    
+    - name: Update NSG to allow SSH from my IP only
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ resource_group_name }}"
+        name: "{{ vm_name }}-nsg"
+        rules:
+          - name: AllowSSHFromMyIP
+            protocol: Tcp
+            destination_port_range: 22
+            access: Allow
+            priority: 1001
+            direction: Inbound
+            source_address_prefix: "{{ my_ip_raw.stdout | trim }}/32"
+            destination_address_prefix: '*'
+      register: nsg_updated
+    
+    - name: Confirm SSH access enabled
+      debug:
+        msg: "SSH access enabled from {{ my_ip_raw.stdout | trim }}/32 only"
+
