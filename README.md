@@ -132,11 +132,7 @@ AAP Workflow
 │   └── Creates: NSG, NIC, VM
 └── Stage 3: enforce-security.yml (on success)
     └── Applies: Tags, Audit Logs
-
-
-## License
-
-MIT License - see LICENSE file for details
+    
 
 ## Author
 
