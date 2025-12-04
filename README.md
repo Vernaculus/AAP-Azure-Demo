@@ -21,7 +21,7 @@ This project demonstrates automated Azure infrastructure deployment through a th
 
 ## Project Structure
 
-```
+
 .
 ├── collections/
 │   └── requirements.yml       # Azure collection dependencies
@@ -29,7 +29,7 @@ This project demonstrates automated Azure infrastructure deployment through a th
 ├── deploy-vm.yml               # Stage 2: Virtual machine deployment
 ├── enforce-security.yml        # Stage 3: Compliance and auditing
 └── README.md
-```
+
 
 ## Prerequisites
 
