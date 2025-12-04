@@ -42,12 +42,12 @@ This project demonstrates automated Azure infrastructure deployment through a th
 
 ### 1. Create Azure Service Principal
 
-```
+
 az ad sp create-for-rbac \
   --name ansible-aap-demo \
   --role Contributor \
   --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/ansible-demo-rg
-```
+
 
 Save the output (appId, password, tenant) for AAP credential configuration.
 
@@ -124,7 +124,7 @@ Network security groups deny all inbound SSH traffic by default.
 
 ## Architecture
 
-```
+
 AAP Workflow
 ├── Stage 1: provision-infra.yml
 │   └── Creates: RG, VNet, Subnet
@@ -132,7 +132,7 @@ AAP Workflow
 │   └── Creates: NSG, NIC, VM
 └── Stage 3: enforce-security.yml (on success)
     └── Applies: Tags, Audit Logs
-```
+
 
 ## License
 
