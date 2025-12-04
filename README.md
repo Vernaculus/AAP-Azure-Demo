@@ -1,44 +1,146 @@
-# AAP-Azure-Demo
+```markdown
+# Azure Infrastructure Automation with Ansible Automation Platform
 
+End-to-end Azure cloud infrastructure provisioning and security enforcement using Red Hat Ansible Automation Platform.
 
-2. **Configure AAP Credentials:**
-- Add Azure Resource Manager credential with service principal details
-- Add Ansible Galaxy credential for collection downloads
+## Overview
 
-3. **Create AAP Project:**
-- Point to this Git repository
+This project demonstrates automated Azure infrastructure deployment through a three-stage workflow pipeline:
+1. **Provision Infrastructure** - Creates resource groups, virtual networks, and subnets
+2. **Deploy Virtual Machine** - Deploys RHEL VM with network security controls
+3. **Enforce Security Policies** - Applies compliance tags and generates audit logs
+
+## Features
+
+- **GitOps Workflow** - All playbooks version-controlled with automated syncing
+- **Role-Based Access Control** - Execute vs. edit permissions for governance
+- **Self-Service Deployment** - Survey-based password input at runtime
+- **Security by Default** - Network security groups with deny-all SSH rules
+- **Compliance Automation** - Automated tagging for governance and audit trails
+- **Idempotent Operations** - Safe to run multiple times without side effects
+
+## Project Structure
+
+```
+.
+├── collections/
+│   └── requirements.yml       # Azure collection dependencies
+├── provision-infra.yml         # Stage 1: Network infrastructure
+├── deploy-vm.yml               # Stage 2: Virtual machine deployment
+├── enforce-security.yml        # Stage 3: Compliance and auditing
+└── README.md
+```
+
+## Prerequisites
+
+- Red Hat Ansible Automation Platform 2.x
+- Azure subscription with active trial or paid account
+- Azure CLI installed locally
+- Git repository access (GitHub/GitLab)
+
+## Setup
+
+### 1. Create Azure Service Principal
+
+```
+az ad sp create-for-rbac \
+  --name ansible-aap-demo \
+  --role Contributor \
+  --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/ansible-demo-rg
+```
+
+Save the output (appId, password, tenant) for AAP credential configuration.
+
+### 2. Configure AAP Credentials
+
+In Automation Controller:
+- **Resources → Credentials → Add**
+- **Credential Type**: Microsoft Azure Resource Manager
+- Enter subscription ID, client ID, client secret, and tenant ID
+
+### 3. Create AAP Project
+
+- **Resources → Projects → Add**
+- **Name**: Azure Infrastructure Demo
+- **Source Control Type**: Git
+- **Source Control URL**: `git@github.com:yourusername/repo.git`
+- **Source Control Branch**: `main`
 - Enable "Update Revision on Launch"
-- Collections will auto-install from `collections/requirements.yml`
 
-4. **Create Job Templates** for each playbook using the Default execution environment
+### 4. Create Job Templates
 
-5. **Build Workflow Template** to chain the three main playbooks together
+Create three job templates in AAP:
+- `1 - Provision Azure Infrastructure` → `provision-infra.yml`
+- `2 - Deploy Virtual Machine` → `deploy-vm.yml`
+- `3 - Enforce Security Policies` → `enforce-security.yml`
 
-## Playbooks
+### 5. Build Workflow
 
-**provision-infra.yml** - Sets up foundational Azure resources (resource group, virtual network, subnet)
+- **Resources → Templates → Add workflow template**
+- Chain the three job templates with "On Success" conditions
+- Add survey for VM admin password (optional)
 
-**deploy-vm.yml** - Deploys a RHEL VM with public IP and network security group (SSH disabled by default)
+## Usage
 
-**enforce-security.yml** - Applies governance tags for compliance tracking and generates audit logs
+### Launch Full Workflow
 
-**enable-ssh-access.yml** - Dynamically detects your public IP and allows SSH access through NSG
+1. Navigate to **Resources → Templates**
+2. Select `Azure End-to-End Deployment` workflow
+3. Click **Launch**
+4. Enter VM admin password when prompted
+5. Monitor execution in workflow visualizer
 
-**reset-nsg.yml** - Reverts NSG to deny all SSH connections
+### Run Individual Stages
 
-## Security Features
+Execute any job template independently for testing or partial deployments.
 
-- SSH access blocked by default on VM deployment
-- Dynamic IP-based access control
-- Compliance tagging for governance
-- Audit trail generation with timestamps
-- Resource inventory for security reviews
+## Deployed Resources
 
-## Demo Flow
+- Resource Group: `ansible-demo-rg`
+- Virtual Network: `demo-vnet` (10.0.0.0/16)
+- Subnet: `demo-subnet` (10.0.1.0/24)
+- Network Security Group: `demo-vm-nsg`
+- Network Interface: `demo-vm-nic`
+- Virtual Machine: `demo-vm` (RHEL 9, Standard_B1s)
 
-1. Run the workflow to provision infrastructure → deploy VM → enforce security
-2. Use `enable-ssh-access.yml` to grant temporary SSH access from your IP
-3. Use `reset-nsg.yml` to revoke access when finished
-4. Review AAP job logs and workflow visualizer for audit trail
+## Compliance & Security
 
-This demonstrates AAP's capability to manage cloud infrastructure with proper RBAC, logging, and automated policy enforcement.
+All resources are tagged with:
+- `environment: demo`
+- `managed_by: ansible`
+- `compliance: enforced`
+- `last_scanned: [timestamp]`
+- `security_classification: internal`
+
+Network security groups deny all inbound SSH traffic by default.
+
+## Technology Stack
+
+- Red Hat Ansible Automation Platform 2.x
+- Azure Resource Manager API
+- azure.azcollection (Ansible Collection)
+- RHEL 9 (Virtual Machine OS)
+- Git (Version Control)
+
+## Architecture
+
+```
+AAP Workflow
+├── Stage 1: provision-infra.yml
+│   └── Creates: RG, VNet, Subnet
+├── Stage 2: deploy-vm.yml (on success)
+│   └── Creates: NSG, NIC, VM
+└── Stage 3: enforce-security.yml (on success)
+    └── Applies: Tags, Audit Logs
+```
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Author
+
+Josh Hall
+
+Built as a demonstration of Ansible Automation Platform capabilities for Azure cloud infrastructure management.
+```
